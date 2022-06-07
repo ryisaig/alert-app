@@ -27,6 +27,7 @@ const OtpPage: React.FC<any> = (props) => {
   const userRetrievalCallback = (userData:any) => {
     if(userData){
       sessionStorage.setItem("userDetails", userData);
+      sessionStorage.setItem("userName", userData.name);
       window.location.href = "/call-tree";
     } else {
       window.location.href = "/user-registration/new";

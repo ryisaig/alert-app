@@ -10,6 +10,13 @@ export const getPendingCallTreeList = (callback:any) => {
     });
 }
 
+export const getAlerts = (callback:any) => {
+    axios.get(URL + "/alert", { params: {mobileNumber: sessionStorage.getItem("user")}})
+    .then(res => {
+        callback(res.data);
+    });
+}
+
 export const getInstructionalCallTreeList = (callback:any) => {
     axios.get(URL + "/informational")
     .then(res => {
@@ -31,6 +38,13 @@ export const getRespondedCallTreeList = (callback:any) => {
 
 export const getCallTreeDetails = (id:any, callback:any) => {
     axios.get(URL + "/calltree/pending/" + id, { params: {mobileNumber: sessionStorage.getItem("user")}})
+    .then(res => {
+        callback(res.data);
+    });
+}
+
+export const getAlertDetails = (id:any, callback:any) => {
+    axios.get(URL + "/alert/" + id + "/details")
     .then(res => {
         callback(res.data);
     });

@@ -1,9 +1,10 @@
-import { IonList, IonItem, IonLabel, IonDatetime } from '@ionic/react';
+import { IonList, IonItem, IonLabel, IonFabButton, IonFab, IonFabList, IonIcon } from '@ionic/react';
 import { useEffect, useState } from 'react';
-import { getInstructionalCallTreeList, getPendingCallTreeList, getRespondedCallTreeList } from '../actions/CallTreeAction';
+import { getAlerts, getInstructionalCallTreeList, getPendingCallTreeList, getRespondedCallTreeList } from '../actions/CallTreeAction';
 import './DefaultStyle.css';
 import SockJsClient from 'react-stomp';
 import { HOST } from '../URL';
+import { alert } from 'ionicons/icons';
 
 const CallTreeList = ({ type }) => {
   
@@ -12,12 +13,16 @@ const CallTreeList = ({ type }) => {
   const SOCKET_URL = HOST + '/ws-message';
   
   const onMessageReceived = (msg) => {
+    if(msg === "alert"){
+      alert("An update to your report has been made.")
+    } else {
       alert("A recent " + msg + " call tree has been triggered.");
+    }
       if(msg === "informational"){
         getInstructionalCallTreeList((data) => setCallTree(data));
         window.location.href = "/call-tree/informational";
       } else {
-        getPendingCallTreeList((data) => setCallTree(data));
+        window.location.href = "/call-tree/alerts";
       }
     }
 
@@ -27,10 +32,13 @@ const CallTreeList = ({ type }) => {
       getPendingCallTreeList((data) => setCallTree(data));
     } else if(type === "responded") {
       getRespondedCallTreeList((data) => setCallTree(data));
-    } else {
+    } else if(type === "alerts") {
+      getAlerts((data) => setCallTree(data));
+    }else {
       getInstructionalCallTreeList((data) => setCallTree(data));
     }
   }, []);
+  
 
   return (
     <div className="container">
@@ -42,6 +50,8 @@ const CallTreeList = ({ type }) => {
              urlToRedirect = "/call-tree/pending/"+ callTree.id + "/details";
             else if(type === "informational")
              urlToRedirect = "/call-tree/informational/" + callTree.id + "/details";
+             else if(type=== "alerts")
+             urlToRedirect = "/call-tree/alerts/" + callTree.id + "/details";
             return (
               <IonItem href={urlToRedirect}>
                 <IonLabel>{callTree.subject}<br/><p style={{fontSize: "12px", fontStyle: "italic"}}>{callTree.caption}</p></IonLabel>
@@ -50,6 +60,7 @@ const CallTreeList = ({ type }) => {
             );
           })
         }
+        
          <SockJsClient
           url={SOCKET_URL}
           topics={['/topic/message']}
@@ -60,6 +71,12 @@ const CallTreeList = ({ type }) => {
           url={SOCKET_URL}
           topics={['/topic/informational']}
           onMessage={(msg)=> onMessageReceived("informational")}
+          debug={false}
+        />
+         <SockJsClient
+          url={SOCKET_URL}
+          topics={['/topic/alert-update']}
+          onMessage={(msg)=> onMessageReceived("alert")}
           debug={false}
         />
       </IonList>
