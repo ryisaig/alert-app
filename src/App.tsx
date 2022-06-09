@@ -86,13 +86,25 @@ const App: React.FC = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-  const [userDetails, setUserDetails] = useState({
+  const [userDetails, setUserDetails]:any = useState({
     mobileNumber: sessionStorage.getItem("user"),
     fullName: sessionStorage.getItem("userName"),
     address: sessionStorage.getItem("address")
   });
 
   const URL = HOST;
+
+  const updateUserInfo = () => {
+    axios.patch(URL + "/user", userDetails)
+    .then(() => {
+      window.alert("Your user account has been updated");
+      sessionStorage.setItem("userName", userDetails.fullName);
+      sessionStorage.setItem("user", userDetails.mobileNumber);
+      sessionStorage.setItem("address", userDetails.address);
+
+      setIsAccountModalOpen(false);
+    })
+  }
 
   const submitReport = () => {
     axios.post(URL + "/alert", {
@@ -318,7 +330,7 @@ const App: React.FC = () => {
                 <IonInput slot="end" value={userDetails.address} onIonChange={(e)=>{setUserDetails({...userDetails, address: e.detail.value ? e.detail.value : ""})}}></IonInput>
               </IonItem>
               <br/>
-              <IonButton style={{float: "right"}} onClick={() => submitReport()}>Update</IonButton>
+              <IonButton style={{float: "right"}} onClick={() => updateUserInfo()}>Update</IonButton>
               <br/>
               <br/>
             </IonCardContent>
