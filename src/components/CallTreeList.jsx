@@ -34,9 +34,19 @@ const CallTreeList = ({ type }) => {
       getRespondedCallTreeList((data) => setCallTree(data));
     } else if(type === "alerts") {
       getAlerts((data) => setCallTree(data));
-    }else {
+    } else if(type === "tips"){
+      setCallTree([
+        {id: "1", subject: "Emergency Kit", createdDate: ""},
+        {id: "2", subject: "Typhoon Safety", createdDate: ""},
+        {id: "3", subject: "Earthquake SAfety", createdDate: ""},
+        {id: "4", subject: "Flood Safety", createdDate: ""},
+        {id: "5", subject: "Fire Safety", createdDate: ""}
+      ]);
+      
+    } else {
       getInstructionalCallTreeList((data) => setCallTree(data));
     }
+   
   }, []);
   
 
@@ -52,6 +62,8 @@ const CallTreeList = ({ type }) => {
              urlToRedirect = "/call-tree/informational/" + callTree.id + "/details";
              else if(type=== "alerts")
              urlToRedirect = "/call-tree/alerts/" + callTree.id + "/details";
+             else if(type=== "tips")
+             urlToRedirect = "/call-tree/tips/" + callTree.id + "/details";
             return (
               <IonItem href={urlToRedirect}>
                 <IonLabel>{callTree.subject}<br/><p style={{fontSize: "12px", fontStyle: "italic"}}>{callTree.caption}</p></IonLabel>

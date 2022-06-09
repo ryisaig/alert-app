@@ -2,6 +2,7 @@ import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp,
   IonButton,
+  IonButtons,
   IonCard,
   IonCardContent,
   IonCardHeader,
@@ -27,7 +28,7 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { checkbox, checkboxOutline, close, informationCircleOutline, triangle, warningOutline, warningSharp} from 'ionicons/icons';
+import { alertCircleOutline, checkbox, checkboxOutline, close, exitOutline, informationCircleOutline, logOut, personCircleOutline, triangle, warningOutline, warningSharp} from 'ionicons/icons';
 import { IonFabButton, IonFab, IonFabList, IonIcon } from '@ionic/react';
 
 /* Core CSS required for Ionic components to work properly */
@@ -62,6 +63,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { HOST } from './URL';
 import AlertDetails from './components/AlertDetails';
+import Tips from './components/Tips';
 
 
 setupIonicReact();
@@ -82,6 +84,13 @@ const App: React.FC = () => {
   });
   
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+
+  const [userDetails, setUserDetails] = useState({
+    mobileNumber: sessionStorage.getItem("user"),
+    fullName: sessionStorage.getItem("userName"),
+    address: sessionStorage.getItem("address")
+  });
 
   const URL = HOST;
 
@@ -95,19 +104,47 @@ const App: React.FC = () => {
     })
     .then(() => {
       window.alert("Your request has been submitted");
+      setAlert({reportType: "",
+      subject: "",
+      description: "",
+      humanDamage: false,
+      location: "",
+      fullName: "",
+      mobileNumber: ""});
+      setIsAlertOpen(false);
     })
   }
+
+  const logOut = () => {
+    sessionStorage.removeItem("userDetails");
+    sessionStorage.removeItem("userName");
+    window.location.href = "../../";
+  }
+
 
   return (
   <IonApp>
     <IonPage>
       <IonHeader>
         <IonToolbar color="primary">
-          <IonTitle style={{textAlign: "center"}}>
+         {    
+         sessionStorage.getItem("userDetails") && <IonButtons slot="start">
+            <IonButton onClick={()=>{setIsAccountModalOpen(true)}}>
+              <IonIcon icon={personCircleOutline} style={{fontSize: "32px"}} />
+            </IonButton>
+          </IonButtons>
+        }
+          <IonTitle style={{textAlign: "center"}} >
           ALERTagaytay
           </IonTitle>
           
           {/* <img src="./logo.png" style={{height: "40px", margin: "auto", display: "block"}}/> */}
+          {sessionStorage.getItem("userDetails") &&  <IonButtons slot="end">
+            <IonButton onClick={() => logOut()}>
+              <IonIcon icon={exitOutline} style={{fontSize: "32px"}} />
+            </IonButton>
+          </IonButtons>
+  }
         </IonToolbar>
       </IonHeader>
       <IonContent>
@@ -125,6 +162,9 @@ const App: React.FC = () => {
                 <Route exact path="/call-tree/responded">
                   <CallTreeList type="responded" />
                 </Route>
+                <Route exact path="/call-tree/tips/:id/details" render={(props) => 
+                  <Tips {...props}/>
+                }/>
                 <Route exact path="/call-tree/pending/:id/details" render={(props) => 
                     <CallTreeDetails {...props}/>
                 }/>
@@ -133,6 +173,9 @@ const App: React.FC = () => {
                 }/>
                 <Route exact path="/call-tree/informational">
                   <CallTreeList type="informational" />
+                </Route>
+                <Route exact path="/call-tree/tips">
+                  <CallTreeList type="tips" />
                 </Route>
                 <Route exact path="/call-tree/informational/:id/details" render={(props) => 
                   <InformationalDetails {...props}/>
@@ -151,12 +194,16 @@ const App: React.FC = () => {
                   <IonLabel>Responded</IonLabel>
                 </IonTabButton> */}
                 <IonTabButton tab="Informational" href="/call-tree/informational">
-                  <IonIcon icon={informationCircleOutline} />
+                  <IonIcon icon={alertCircleOutline} />
                   <IonLabel>My Alerts</IonLabel>
                 </IonTabButton>
                 <IonTabButton tab="Alerts" href="/call-tree/alerts">
                   <IonIcon icon={warningOutline} />
                   <IonLabel>My Reports</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="Tips" href="/call-tree/tips">
+                  <IonIcon icon={informationCircleOutline} />
+                  <IonLabel>Tips</IonLabel>
                 </IonTabButton>
               </IonTabBar>
             </IonTabs>
@@ -182,7 +229,7 @@ const App: React.FC = () => {
         </IonRouterOutlet>
       </IonReactRouter>
       <IonFab vertical="bottom" horizontal="end" edge slot="fixed" style={{marginBottom: "50px"}} onClick={()=>setIsAlertOpen(true)}>
-                <IonFabButton color="danger">
+                <IonFabButton color="danger" style={{width: "75px", height: "75px"}}>
                     <IonIcon icon={warningSharp} />
                 </IonFabButton>
                 </IonFab>
@@ -238,6 +285,40 @@ const App: React.FC = () => {
               </IonItem>
               <br/>
               <IonButton style={{float: "right"}} onClick={() => submitReport()}>Submit</IonButton>
+              <br/>
+              <br/>
+            </IonCardContent>
+          </IonCard>
+      </IonModal>
+
+      <IonModal isOpen={isAccountModalOpen} onDidDismiss={() => setIsAccountModalOpen(false)}>
+      <IonHeader>
+        <IonToolbar color="primary">
+        <IonTitle style={{textAlign: "center"}}>
+          ALERTagaytay
+          </IonTitle>
+                    <IonButton slot="end" onClick={() => setIsAccountModalOpen(false)}><IonIcon icon={close}/></IonButton>
+        </IonToolbar>
+      </IonHeader>
+          <IonCard>
+            <IonCardHeader>
+            <IonCardTitle>Modify Account</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <IonItem>
+                <IonLabel>Mobile Number</IonLabel>
+                <IonInput slot="end" value={userDetails.mobileNumber} onIonChange={(e)=>{setUserDetails({...userDetails, mobileNumber: e.detail.value ? e.detail.value : ""})}}></IonInput>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Full Name</IonLabel>
+                <IonInput slot="end" value={userDetails.fullName} onIonChange={(e)=>{setUserDetails({...userDetails, fullName: e.detail.value ? e.detail.value : ""})}}></IonInput>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Address</IonLabel>
+                <IonInput slot="end" value={userDetails.address} onIonChange={(e)=>{setUserDetails({...userDetails, address: e.detail.value ? e.detail.value : ""})}}></IonInput>
+              </IonItem>
+              <br/>
+              <IonButton style={{float: "right"}} onClick={() => submitReport()}>Update</IonButton>
               <br/>
               <br/>
             </IonCardContent>

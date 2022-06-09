@@ -18,7 +18,7 @@ const InformationalDetails: React.FC<any> = (props:any) => {
     <div className="container">
       <IonCard>
         <IonCardHeader>
-          <IonButton href="/call-tree/pending" color="light" style={{width: "100%"}}>
+          <IonButton href="/call-tree/Informational" color="light" style={{width: "100%"}}>
             <IonIcon slot="start" icon={chevronBack} />
             Back
           </IonButton>

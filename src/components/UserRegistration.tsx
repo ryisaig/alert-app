@@ -8,7 +8,9 @@ const UserRegistration: React.FC<any> = () => {
   const [userDetails, setUserDetails]:any = useState({}); 
   const userRegistrationCallBack = (result: any) => {
     sessionStorage.setItem("userDetails", result);
-    window.location.href = "/call-tree";
+      sessionStorage.setItem("userName", result.name);
+      sessionStorage.setItem("address", result.address);
+    window.location.href = "/call-tree/informational";
   }
 
   return (
