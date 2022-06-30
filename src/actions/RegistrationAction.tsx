@@ -36,12 +36,14 @@ export const saveUser = (userDetails:any, callback:any) => {
     axios.post(URL + "/user", {
         mobileNumber: sessionStorage.getItem("user"),
         name: userDetails.fullName,
+        brgy: userDetails.brgy,
+        lastName: userDetails.lastName,
         address: userDetails.address,
         geolocationX: sessionStorage.getItem("geoLocationX"),
         geolocationY: sessionStorage.getItem("geoLocationY"),
     })
-    .then(() => {
-       callback();
+    .then((result) => {
+       callback(result.data);
     }).catch(error => {
         alert(error);
     });

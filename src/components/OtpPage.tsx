@@ -28,6 +28,8 @@ const OtpPage: React.FC<any> = (props) => {
     if(userData){
       sessionStorage.setItem("userDetails", userData);
       sessionStorage.setItem("userName", userData.name);
+      sessionStorage.setItem("lastName", userData.lastName);
+      sessionStorage.setItem("brgy", userData.brgy);
       sessionStorage.setItem("address", userData.address);
       window.location.href = "/call-tree/informational";
     } else {

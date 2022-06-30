@@ -19,6 +19,7 @@ import {
   IonRouterOutlet,
   IonSelect,
   IonSelectOption,
+  IonSplitPane,
   IonTabBar,
   IonTabButton,
   IonTabs,
@@ -28,7 +29,7 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { alertCircleOutline, checkbox, checkboxOutline, close, exitOutline, informationCircleOutline, logOut, personCircleOutline, triangle, warningOutline, warningSharp} from 'ionicons/icons';
+import { alertCircleOutline, checkbox, checkboxOutline, close, exitOutline, informationCircleOutline, laptop, logOut, menu, personCircleOutline, triangle, warningOutline, warningSharp} from 'ionicons/icons';
 import { IonFabButton, IonFab, IonFabList, IonIcon } from '@ionic/react';
 
 /* Core CSS required for Ionic components to work properly */
@@ -65,6 +66,10 @@ import { HOST } from './URL';
 import AlertDetails from './components/AlertDetails';
 import Tips from './components/Tips';
 
+import MapPicker from 'react-google-map-picker'
+
+
+const DefaultZoom = 10;
 
 setupIonicReact();
 
@@ -78,10 +83,12 @@ const App: React.FC = () => {
     description: "",
     humanDamage: false,
     location: "",
-    fullName: {},
-    mobileNumber: {}
+    fullName: "",
+    mobileNumber: "",
 
   });
+
+  const DefaultLocation = { lat: parseFloat(sessionStorage.getItem("geoLocationX") || "0"), lng: parseFloat(sessionStorage.getItem("geoLocationY") || "0")};
   
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -89,7 +96,9 @@ const App: React.FC = () => {
   const [userDetails, setUserDetails]:any = useState({
     mobileNumber: sessionStorage.getItem("user"),
     fullName: sessionStorage.getItem("userName"),
-    address: sessionStorage.getItem("address")
+    address: sessionStorage.getItem("address"),
+    lastName: sessionStorage.getItem("lastName"),
+    brgy: sessionStorage.getItem("brgy")
   });
 
   const URL = HOST;
@@ -107,11 +116,15 @@ const App: React.FC = () => {
   }
 
   const submitReport = () => {
+    if(alert.reportType === "" || alert.subject === "" ){
+      window.alert("Pls check the details")
+      return;
+    }
     axios.post(URL + "/alert", {
       ...alert,
-      geolocationX: sessionStorage.getItem("geoLocationX"),
-      geolocationY: sessionStorage.getItem("geoLocationY"),
-      fullName: sessionStorage.getItem("userName"), 
+      geolocationX: location.lat,
+      geolocationY: location.lng,
+      fullName: `${sessionStorage.getItem("userName")} ${sessionStorage.getItem("lastName")}`, 
       mobileNumber: sessionStorage.getItem("user")
     })
     .then(() => {
@@ -133,13 +146,68 @@ const App: React.FC = () => {
     window.location.href = "../../";
   }
 
+  const [activeGroups, setActiveGroups] = useState([]);
+
+  const classifications:any = {
+    "Medical Emergency": [
+      "Fire/Burn",
+      "Heart Attack/Chest Pain",
+      "Major Cuts",
+      "Stroke",
+      "Fractures",
+      "Electric Shocks",
+      "Bite/ Stings",
+      "Choking/ Suffocation",
+      "Eye Trauma",
+      "Fall And Slips",
+      "Poisoning",
+      "Falling Object",
+      "Bruises",
+      "Sprain"
+    ],
+    "Vehicular Crash": [],
+    "Terrorist Attack": ["Terrorist Attack"],
+    "Others": ["Others"],
+    "Natural Disaster": ["Flood",
+      "Falling Debris",
+    "Ash fall",
+    "Earthquake",
+    "Typhoon",
+    "Landslide",
+    "Fire"]
+  }
+
+  const [defaultLocation, setDefaultLocation] = useState(DefaultLocation);
+
+  const [location, setLocation] = useState(defaultLocation);
+  const [zoom, setZoom] = useState(DefaultZoom);
+
+  function handleChangeLocation (lat:any, lng: any){
+    setLocation({lat:lat, lng:lng});
+  }
+  
+  function handleChangeZoom (newZoom: any){
+    setZoom(newZoom);
+  }
+
+  function handleResetLocation(){
+    setDefaultLocation({ ... DefaultLocation});
+    setZoom(DefaultZoom);
+  }
 
   return (
   <IonApp>
     <IonPage>
       <IonHeader>
         <IonToolbar color="primary">
-         {    
+         {/* {    
+         sessionStorage.getItem("userDetails") && <IonButtons slot="start">
+            <IonButton onClick={()=>{setIsAccountModalOpen(true)}}>
+              <IonIcon icon={menu} style={{fontSize: "32px"}} />
+            </IonButton>
+          </IonButtons>
+        } */}
+        {    
          sessionStorage.getItem("userDetails") && <IonButtons slot="start">
             <IonButton onClick={()=>{setIsAccountModalOpen(true)}}>
               <IonIcon icon={personCircleOutline} style={{fontSize: "32px"}} />
@@ -240,11 +308,11 @@ const App: React.FC = () => {
           </Route>
         </IonRouterOutlet>
       </IonReactRouter>
-      <IonFab vertical="bottom" horizontal="end" edge slot="fixed" style={{marginBottom: "50px"}} onClick={()=>setIsAlertOpen(true)}>
+      {sessionStorage.getItem("userDetails") && <IonFab vertical="bottom" horizontal="end" edge slot="fixed" style={{marginBottom: "50px"}} onClick={()=>setIsAlertOpen(true)}>
                 <IonFabButton color="danger" style={{width: "75px", height: "75px"}}>
                     <IonIcon icon={warningSharp} />
                 </IonFabButton>
-                </IonFab>
+                </IonFab>}
       </IonContent>
       <IonModal isOpen={isAlertOpen} onDidDismiss={() => setIsAlertOpen(false)}>
       <IonHeader>
@@ -260,43 +328,62 @@ const App: React.FC = () => {
             <IonCardTitle>Report an Emergency</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
+
             <IonItem>
             <IonLabel>Report Type</IonLabel>
-            <IonSelect value={alert.reportType} placeholder="Select One" onIonChange={e => setAlert({...alert, reportType: e.detail.value})}>
-              <IonSelectOption value="First Aid">First Aid</IonSelectOption>
-              <IonSelectOption value="Traffic Accident">Traffic Accident</IonSelectOption>
-              <IonSelectOption value="Domestic Accident">Domestic Accident</IonSelectOption>
+            <IonSelect value={alert.reportType} placeholder="Select One" onIonChange={e => {setAlert({...alert, reportType: e.detail.value}); setActiveGroups(classifications[e.detail.value]); }}>
+              <IonSelectOption value="Medical Emergency">Medical Emergency</IonSelectOption>
+              <IonSelectOption value="Vehicular Crash">Vehicular Crash</IonSelectOption>
               <IonSelectOption value="Natural Disaster">Natural Disaster</IonSelectOption>
               <IonSelectOption value="Terrorist Attack">Terrorist Attack</IonSelectOption>
               <IonSelectOption value="Others">Others</IonSelectOption>
             </IonSelect>
           </IonItem>
-            <IonItem>
+          <IonItem>
+            
+                <IonLabel>Classification</IonLabel>
+                <IonSelect value={alert.subject} placeholder="Select One" onIonChange={e => setAlert({...alert, subject: e.detail.value})}>
+                {
+                  activeGroups && activeGroups.map((group: any) => {
+                    return <IonSelectOption value={group}>{group}</IonSelectOption>
+                  })
+                }
+                </IonSelect>
+                {/* <IonInput slot="end" value={alert.subject}  placeholder="Type the subject here..." onIonChange={(e)=>{setAlert({...alert, subject: e.detail.value ? e.detail.value : ""})}}></IonInput> */}
+              </IonItem>
+            {/* <IonItem>
               <IonLabel>Is there a human damage?</IonLabel>
               <IonCheckbox slot="end" checked={alert.humanDamage} onIonChange={(e)=>{setAlert({...alert, humanDamage: e.detail.checked})}}/>
-            </IonItem>
+            </IonItem> */}
             <IonItem>
               <IonLabel>Full Name</IonLabel>
-              <IonText slot="end" style={{textAlign: "right"}}>{sessionStorage.getItem("userName")}</IonText>
+              <IonText slot="end" style={{textAlign: "right"}}>{`${sessionStorage.getItem("userName")} ${sessionStorage.getItem("lastName")}`}</IonText>
               </IonItem>
               <IonItem>
               <IonLabel>Mobile Number</IonLabel>
               <IonText slot="end" style={{textAlign: "right"}}>{sessionStorage.getItem("user")}</IonText>
               </IonItem>
-              <IonItem>
-                <IonLabel>Subject</IonLabel>
-                <IonInput slot="end" value={alert.subject}  placeholder="Type the subject here..." onIonChange={(e)=>{setAlert({...alert, subject: e.detail.value ? e.detail.value : ""})}}></IonInput>
-              </IonItem>
-              <IonItem>
+             
+              {/* <IonItem>
                 <IonLabel>Description</IonLabel>
                 <IonInput slot="end"  value={alert.description}  placeholder="Type the description here..." onIonChange={(e)=>{setAlert({...alert, description: e.detail.value ? e.detail.value : ""})}}></IonInput>
-              </IonItem>
+              </IonItem> */}
+             
+                
               <IonItem>
                 <IonLabel>Location Hint</IonLabel>
                 <IonInput slot="end"  value={alert.location} placeholder="Type any landmarks..." onIonChange={(e)=>{setAlert({...alert, location: e.detail.value ? e.detail.value : ""})}}></IonInput>
               </IonItem>
-              <br/>
               <IonButton style={{float: "right"}} onClick={() => submitReport()}>Submit</IonButton>
+
+              <MapPicker defaultLocation={defaultLocation}
+                zoom={zoom}
+                // mapTypeId={{}}
+                style={{height:'200px'}}
+                onChangeLocation={handleChangeLocation} 
+                onChangeZoom={handleChangeZoom}
+                apiKey='AIzaSyBDW1CMuHycsVdVi5ofBq2ZFAhtJ1G7k3g'/>
+              <br/>
               <br/>
               <br/>
             </IonCardContent>
@@ -322,8 +409,51 @@ const App: React.FC = () => {
                 <IonInput slot="end" value={userDetails.mobileNumber} onIonChange={(e)=>{setUserDetails({...userDetails, mobileNumber: e.detail.value ? e.detail.value : ""})}}></IonInput>
               </IonItem>
               <IonItem>
-                <IonLabel>Full Name</IonLabel>
+                <IonLabel>First Name</IonLabel>
                 <IonInput slot="end" value={userDetails.fullName} onIonChange={(e)=>{setUserDetails({...userDetails, fullName: e.detail.value ? e.detail.value : ""})}}></IonInput>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Last Name</IonLabel>
+                <IonInput slot="end" value={userDetails.lastName} onIonChange={(e)=>{setUserDetails({...userDetails, lastName: e.detail.value ? e.detail.value : ""})}}></IonInput>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Brgy</IonLabel>
+                <IonSelect style={{float: "left"}} value={userDetails.brgy} onIonChange={(e)=>{setUserDetails({...userDetails, brgy: e.detail.value ? e.detail.value : ""})}}>
+                  <IonSelectOption value="Asisan">Asisan</IonSelectOption>
+                  <IonSelectOption value="Bagong Tubig">Bagong Tubig</IonSelectOption>
+                  <IonSelectOption value="Calabuso">Calabuso</IonSelectOption>
+                  <IonSelectOption value="Dapdap East">Dapdap East</IonSelectOption>
+                  <IonSelectOption value="Dapdap West">Dapdap West</IonSelectOption>
+                  <IonSelectOption value="Francisco">Francisco</IonSelectOption>
+                  <IonSelectOption value="Guinhawa North">Guinhawa North</IonSelectOption>
+                  <IonSelectOption value="Guinhawa South">Guinhawa South</IonSelectOption>
+                  <IonSelectOption value="Iruhin Central">Iruhin Central</IonSelectOption>
+                  <IonSelectOption value="Iruhin East">Iruhin East</IonSelectOption>
+                  <IonSelectOption value="Iruhin West">Iruhin West</IonSelectOption>
+                  <IonSelectOption value="Kaybagal Central">Kaybagal Central</IonSelectOption>
+                  <IonSelectOption value="Kaybagal North">Kaybagal North</IonSelectOption>
+                  <IonSelectOption value="Kaybagal South">Kaybagal South</IonSelectOption>
+                  <IonSelectOption value="Mag-asawang Ilat">Mag-asawang Ilat</IonSelectOption>
+                  <IonSelectOption value="Maharlika East">Maharlika East</IonSelectOption>
+                  <IonSelectOption value="Maharlika West">Maharlika West</IonSelectOption>
+                  <IonSelectOption value="Maitim II Central">Maitim II Central</IonSelectOption>
+                  <IonSelectOption value="Maitim II East">Maitim II East</IonSelectOption>
+                  <IonSelectOption value="Maitim II West">Maitim II West</IonSelectOption>
+                  <IonSelectOption value="Mendez Crossing East">Mendez Crossing East</IonSelectOption>
+                  <IonSelectOption value="Mendez Crossing West">Mendez Crossing West</IonSelectOption>
+                  <IonSelectOption value="Neogan">Neogan</IonSelectOption>
+                  <IonSelectOption value="Patutong Malaki North">Patutong Malaki North</IonSelectOption>
+                  <IonSelectOption value="Patutong Malaki South">Patutong Malaki South</IonSelectOption>
+                  <IonSelectOption value="Sambong">Sambong</IonSelectOption>
+                  <IonSelectOption value="San Jose">San Jose</IonSelectOption>
+                  <IonSelectOption value="Silang Crossing East">Silang Crossing East</IonSelectOption>
+                  <IonSelectOption value="Silang Crossing West">Silang Crossing West</IonSelectOption>
+                  <IonSelectOption value="Sungay East">Sungay East</IonSelectOption>
+                  <IonSelectOption value="Sungay West">Sungay West</IonSelectOption>
+                  <IonSelectOption value="Tolentino East">Tolentino East</IonSelectOption>
+                  <IonSelectOption value="Tolentino West">Tolentino West</IonSelectOption>
+                  <IonSelectOption value="Zambal">Zambal</IonSelectOption>
+                </IonSelect>
               </IonItem>
               <IonItem>
                 <IonLabel>Address</IonLabel>

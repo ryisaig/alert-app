@@ -29,9 +29,7 @@ const AlertDetails: React.FC<any> = (props:any) => {
         <IonCardContent>
           <IonList style={{borderStyle: "solid", borderWidth: "thin", borderColor: "#E0E0E0", padding: "0"}}>
             <IonItem>Report Type: {callTree.reportType}</IonItem>
-            <IonItem>Subject: {callTree.subject}</IonItem>
-            <IonItem>Description: {callTree.description}</IonItem>
-            <IonItem>Human Damage?: {callTree.humanDamage? "Yes" : "No"}</IonItem>
+            <IonItem>Classification: {callTree.subject}</IonItem>
             <IonItem>Location Hint: {callTree.location}</IonItem>
             <IonItem>Status: {callTree.status}</IonItem>
 
